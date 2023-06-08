@@ -18,13 +18,23 @@ async function addCritic(review) {
   return review;
 }
 
-function update(updatedReview, reviewId) {
-  return knex("reviews as r")
-    .select("r.*")
-    .where({ "r.review_id": reviewId })
-    .update(updatedReview, "r.*")
-    .then(() => read(reviewId))
-    .then(addCritic);
+function update(updatedReview, review_id) {
+  return knex("reviews")
+    .where({ review_id })
+    .update(updatedReview)
+    .then(() => {
+      return knex("reviews")
+        .where({ review_id })
+        .join("critics", "reviews.critic_id", "critics.critic_id")
+        .select("reviews.*", "critics.*")
+        .first();
+    })
+    .then(updatedRecord => {
+      if (updatedRecord) {
+        return addCritic(updatedRecord);
+      }
+      return null;
+    });
 }
 
 module.exports = {
